@@ -1,0 +1,6 @@
+
+The most 6 correlated verses to 2:1: 
+ ['1:6', '2:0', '1:1', '1:4', '1:3', '2:8'] 
+
+The least 6 correlated verses to 2:1: 
+ ['2:3', '2:7', '2:5', '2:2', '2:6', '1:2'] 

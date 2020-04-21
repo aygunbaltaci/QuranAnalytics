@@ -1,0 +1,4 @@
+
+The most 5 correlated verse to other verses: ['Fatiha/1', 'Bakara/0', 'Bakara/8', 'Fatiha/2', 'Bakara/10'], Value: ['Fatiha/1', 'Bakara/0', 'Bakara/8', 'Fatiha/2', 'Bakara/10'] 
+
+The least 5 correlated verse to other verses: ['Bakara/1', 'Bakara/6', 'Fatiha/3', 'Bakara/7', 'Bakara/2'], Value: ['Bakara/1', 'Bakara/6', 'Fatiha/3', 'Bakara/7', 'Bakara/2'] 

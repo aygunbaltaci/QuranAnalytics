@@ -1,0 +1,5 @@
+
+The most 4 correlated verses to Fatiha/3: 
+ ['Fatiha/2', 'Fatiha/1', 'Bakara/0', 'Fatiha/4']
+The least 4 correlated verses to Fatiha/3: 
+ ['Bakara/2', 'Fatiha/7', 'Bakara/1', 'Bakara/3']

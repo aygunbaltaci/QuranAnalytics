@@ -1,0 +1,5 @@
+
+The most 6 correlated verses to Bakara/1: 
+ ['Fatiha/6', 'Bakara/0', 'Fatiha/1', 'Fatiha/4', 'Fatiha/3', 'Bakara/8']
+The least 6 correlated verses to Bakara/1: 
+ ['Bakara/3', 'Bakara/7', 'Bakara/5', 'Bakara/2', 'Bakara/6', 'Fatiha/2']
