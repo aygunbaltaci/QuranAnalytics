@@ -174,14 +174,22 @@ class quranAnalytics:
                         print("\n%s could not be found in the database" %verseRange[j])
         else: # user did not provide any input 
             print("\nPlease provide a verse range.")
-    
+
     # =============================== Prepare input data for search
     def prepareData_search(self, database = 'root'):
         if database == 'lemma':
             self.inputFileName = self.input_file_name_quran_lemma + self.input_file_format_search
-        else:
+        elif database == 'officialorder':
+            self.inputFileName =  self.input_file_name_quran_official_wovel + self.input_file_format_search
+        elif database == 'officialorder_novowels':
+            self.inputFileName =  self.input_file_name_quran_official_nowovel + self.input_file_format_search
+        elif database == 'revelationorder':
+            self.inputFileName =  self.input_file_name_quran_revelation_wovel + self.input_file_format_search
+        elif database == 'revelationorder_novowels':
+            self.inputFileName =  self.input_file_name_quran_revelation_nowovel + self.input_file_format_search
+        else: # root database
             self.inputFileName =  self.input_file_name_quran_root + self.input_file_format_search
-
+        
         with open(self.myDir + os.sep + self.inputFileDir + os.sep + self.inputFileName, 'r') as search_data:
             for line in search_data:
                 self.inputData.append(line)
@@ -215,6 +223,7 @@ class quranAnalytics:
                             outputData.append(lines[:cnt])
                             break
                         cnt += 1
+        print("Total found number of verses: %d" %(len(outputData)))
         self.writeOutputData(sys._getframe().f_code.co_name, outputData)
 
     # =============================== Write the data to an output file
