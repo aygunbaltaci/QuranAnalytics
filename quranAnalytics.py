@@ -17,73 +17,63 @@ from datetime import datetime
 class quranAnalytics:
     # =============================== Initializer / Instance attributes
     def __init__(self):
+        self.handleinput = handleInput()
+        self.handleoutput = handleOutput(self.handleinput)
+        self.handleplot = handlePlot(self.handleinput, self.handleoutput)
+        self.search = search(self.handleinput, self.handleoutput, self.handleplot)
+        self.correlations = correlations(self.handleinput, self.handleoutput, self.handleplot, self.search)
+        self.networks = networks()
+
+class correlations(quranAnalytics):
+    # =============================== Initializer / Instance attributes
+    def __init__(self, handleinput, handleoutput, handleplot, search):
         self.corr = pd.DataFrame()
-        self.dateTime = datetime.now().strftime('%Y%m%d_%H%M%S_')
         self.endVerse = 0
-        self.inputData = []
-        self.inputFileDir = 'inputFiles'
-        self.inputFileName = ""
-        self.input_file_format_analytics = '.csv'
-        self.input_file_format_search = '.txt'
-        self.input_file_name_quran_official_nowovel = 'quran_officialOrder_novowels'
-        self.input_file_name_quran_official_wovel = 'quran_officialOrder_default'
-        self.input_file_name_quran_lemma = 'quran_lemma_officialOrder'
-        self.input_file_name_quran_revelation_nowovel = 'quran_revelationOrder_novowels'
-        self.input_file_name_quran_revelation_wovel = 'quran_revelationOrder_default'
-        self.input_file_name_quran_root = 'quran_root_officialOrder'
-        self.isInputRange = False
-        self.myPath = os.path.realpath(__file__)
-        self.myDir = os.path.dirname(self.myPath)
-        self.outputData_fileFormat_analyze = '.csv'
-        self.outputData_fileFormat_search = '.txt'
-        self.outputFig_fileFormat = 'pdf'
-        self.outputFile_encoding = 'utf-8-sig'
-        self.outputFileDir = 'outputFiles'
+        self.handleinput = handleinput
+        self.handleoutput = handleoutput
+        self.handleplot = handleplot
+        self.search = search
         self.startVerse = 0
 
     # =============================== Calculate correlation matrix of given verse range
-    def calculateCorrelation (self, method = None):
+    def calculate_correlations(self, colormap = 'cividis', method = 'pearson', opacity = 1, plot = False,
+            textOrder = 'official', textType = 'default', verseRange = ['1:1', '114:5'], xticks_rotation = 90, 
+            yticks_rotation = 0):
+        self.handleinput.preparedata_correlations(textOrder, textType, verseRange)
         if not method in ['pearson', 'kendall', 'spearman']: method = 'pearson'
         
         print("\nSelected correlation method: %s" %method)
 
         # SQUARE MATRIX
         cnt = 0
-        if self.isInputRange:
-            for i in range(self.startVerse, self.endVerse + 1):
-                self.inputData[i] = self.inputData.iloc[:, i].astype('category').cat.codes # this conversion is needed to calculate correlation with self.corr()
-                if cnt % 100 == 0 or i == self.endVerse:
-                    print("\nVerse %d completed out of %d" %(cnt + 1, self.endVerse - self.startVerse + 1))
+        if self.handleinput.isInputRange:
+            for i in range(self.handleinput.startVerse, self.handleinput.endVerse + 1):
+                self.handleinput.inputdata[i] = self.handleinput.inputdata.iloc[:, i].astype('category').cat.codes # this conversion is needed to calculate correlation with self.corr()
+                if cnt % 100 == 0 or i == self.handleinput.endVerse:
+                    print("\nVerse %d completed out of %d" %(cnt + 1, self.handleinput.endVerse - self.handleinput.startVerse + 1))
                 cnt += 1
         else:
-            for i in self.selectedVerses: 
-                self.inputData[i] = self.inputData.iloc[:, i].astype('category').cat.codes # this conversion is needed to calculate correlation with self.corr()
-                if cnt % 100 == 0 or i == self.selectedVerses[-1]:
-                    print("\nVerse %d completed out of %d" %(cnt + 1, len(self.selectedVerses)))
+            for i in self.handleinput.selectedVerses: 
+                self.handleinput.inputdata[i] = self.handleinput.inputdata.iloc[:, i].astype('category').cat.codes # this conversion is needed to calculate correlation with self.corr()
+                if cnt % 100 == 0 or i == self.handleinput.selectedVerses[-1]:
+                    print("\nVerse %d completed out of %d" %(cnt + 1, len(self.handleinput.selectedVerses)))
                 cnt += 1
-        corr2 = self.inputData.corr(method = method) # valid methods: ‘pearson’, ‘kendall’, ‘spearman’. Check out: https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.corr.html
+        corr2 = self.handleinput.inputdata.corr(method = method) # valid methods: ‘pearson’, ‘kendall’, ‘spearman’. Check out: https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.corr.html
         self.corr = corr2.dropna()
-        self.corr.columns = self.inputData.columns[self.startVerse:self.endVerse + 1] if self.isInputRange else self.inputData.columns[self.selectedVerses]
-        self.corr.index = self.inputData.columns[self.startVerse:self.endVerse + 1] if self.isInputRange else self.inputData.columns[self.selectedVerses]
-        self.writeOutputData(sys._getframe().f_code.co_name, self.corr)
-
-    # =============================== Show correlation of selected verse as a network matrix
-    def drawNetworkOfVerses(self):
-        pass
-
-    # =============================== Plot the correlation matrix of given verse range
-    def plotCorrelationMatrix (self, colormap = 'cividis', opacity = 1, xticks_rotation = 90, yticks_rotation = 0):
-        sns.heatmap(self.corr, cmap = colormap, alpha = opacity)
-        plt.xticks(rotation = xticks_rotation)
-        plt.yticks(rotation = yticks_rotation)
-        self.writeOutputData(sys._getframe().f_code.co_name, None)
-        plt.show()
-
+        self.corr.columns = self.handleinput.inputdata.columns[self.handleinput.startVerse:self.handleinput.endVerse + 1] if self.handleinput.isInputRange else self.handleinput.inputdata.columns[self.handleinput.selectedVerses]
+        self.corr.index = self.handleinput.inputdata.columns[self.handleinput.startVerse:self.handleinput.endVerse + 1] if self.handleinput.isInputRange else self.handleinput.inputdata.columns[self.handleinput.selectedVerses]
+        if plot: self.handleplot.correlationmatrix(self.corr, colormap, opacity, xticks_rotation, yticks_rotation)
+        self.handleoutput.outputdata_write(sys._getframe().f_code.co_name, self.corr)
+    
     # =============================== Find correlated verses to a verse given by the user
-    def findCorrelatedVersesToAVerse (self, verse, compareVerse_numOfVerses):
+    def find_correlatedverses(self, numofverses, verse, colormap = 'cividis', method = 'pearson',  opacity = 1, 
+            plot = False, textOrder = 'official', textType = 'default', verseRange = ['1:1', '114:5'], xticks_rotation = 90, 
+            yticks_rotation = 0):
+        self.calculate_correlations(method = method, textOrder = textOrder, 
+                textType = textType, verseRange = verseRange)
+
         # most/least correlated verses to a respective verse
         outputData = []
-        funcAbbrev = 'findCorrelatedVersesToAVerse'
         corrVersesToAVerse = []
         for i in range(len(self.corr[verse])):
             if self.corr[verse][i] >= 0.9:
@@ -91,59 +81,85 @@ class quranAnalytics:
         corrVersesToAVerse = self.corr[verse].sort_values(0)
         # print results on the terminal
         print("\nThe least %d correlated verses to %s:\n%s \n" 
-        %(compareVerse_numOfVerses, verse, 
-        corrVersesToAVerse[:compareVerse_numOfVerses]))
+        %(numofverses, verse, 
+        corrVersesToAVerse[:numofverses]))
         corrVersesToAVerse = corrVersesToAVerse[::-1] # reverse the array to have the right descending order
         print("\nThe most %d correlated verses to %s:\n%s \n" 
-        %(compareVerse_numOfVerses, verse, 
-        corrVersesToAVerse[1:compareVerse_numOfVerses + 1]))  # +1 is not to show the original verse
+        %(numofverses, verse, 
+        corrVersesToAVerse[1:numofverses + 1]))  # +1 is not to show the original verse
         # save results to a txt file
         outputData = list(corrVersesToAVerse.index)
-        outputData.append(compareVerse_numOfVerses)
+        outputData.append(numofverses)
         outputData.append(verse)
-        self.writeOutputData(sys._getframe().f_code.co_name, outputData)
+        if plot: self.handleplot.correlationmatrix(self.corr, colormap, opacity, xticks_rotation, yticks_rotation)
+        self.handleoutput.outputdata_write(sys._getframe().f_code.co_name, outputData)
 
     # =============================== Find most and least correlated verses to other verses
-    def least_most_correlatedVersesToOtherVerses (self, mostLeast_numOfVerses):
+    def rank_correlations(self, numofverses, colormap = 'cividis', method = 'pearson', opacity = 1, plot = False, 
+            textOrder = 'official', textType = 'default', verseRange = ['1:1', '114:5'], xticks_rotation = 90, 
+            yticks_rotation = 0):
+        self.calculate_correlations(method = method, textOrder = textOrder, 
+                textType = textType, verseRange = verseRange)
+
         mostLeastCorrVerse = []
         for i in self.corr.columns.tolist():
             mostLeastCorrVerse.append(self.corr[i].sum()) 
         mostLeastCorrVerse = pd.DataFrame(mostLeastCorrVerse, index = self.corr.columns.tolist())
         mostLeastCorrVerse = mostLeastCorrVerse.sort_values(0)
         print("\nThe least %d correlated verse to other verses: %s, Value: %s \n" 
-        %(mostLeast_numOfVerses, mostLeastCorrVerse.columns[:mostLeast_numOfVerses], 
-        mostLeastCorrVerse[:mostLeast_numOfVerses]))
+        %(numofverses, mostLeastCorrVerse.columns[:numofverses], 
+        mostLeastCorrVerse[:numofverses]))
         mostLeastCorrVerse = mostLeastCorrVerse[::-1] # reverse the array to have the right descending order
         print("\nThe most %d correlated verse to other verses: %s, Value: %s \n" 
-        %(mostLeast_numOfVerses, mostLeastCorrVerse.columns[:mostLeast_numOfVerses], 
-        mostLeastCorrVerse[:mostLeast_numOfVerses]))
+        %(numofverses, mostLeastCorrVerse.columns[:numofverses], 
+        mostLeastCorrVerse[:numofverses]))
         # save results to a txt file
         outputData = list(mostLeastCorrVerse.index)
-        outputData.append(mostLeast_numOfVerses)
-        self.writeOutputData(sys._getframe().f_code.co_name, outputData)
+        outputData.append(numofverses) 
+        if plot: self.handleplot.correlationmatrix(self.corr, colormap, opacity, xticks_rotation, yticks_rotation)
+        self.handleoutput.outputdata_write(sys._getframe().f_code.co_name, outputData)
+
+class handleInput(quranAnalytics):
+    # =============================== Initializer / Instance attributes
+    def __init__(self):
+        self.inputdata = []
+        self.inputfile_directory = 'inputFiles'
+        self.inputfile_format_correlations = '.csv'
+        self.inputfile_format_search = '.txt'
+        self.inputfile_name = ""
+        self.inputfile_name_quran_official_nowovel = 'quran_officialOrder_novowels'
+        self.inputfile_name_quran_official_wovel = 'quran_officialOrder_default'
+        self.inputfile_name_quran_lemma = 'quran_lemma_officialOrder'
+        self.inputfile_name_quran_revelation_nowovel = 'quran_revelationOrder_novowels'
+        self.inputfile_name_quran_revelation_wovel = 'quran_revelationOrder_default'
+        self.inputfile_name_quran_root = 'quran_root_officialOrder'
+        self.isInputRange = False
+        self.mypath = os.path.realpath(__file__)
+        self.mydirectory = os.path.dirname(self.mypath)
+        self.verserange_default = ['1:1', '114:5']
 
     # =============================== Prepare input data according to verse range given by user
-    def prepareData_analytics (self, verseRange, textOrder = 'official', textType = 'default'):
-        self.inputData = pd.DataFrame()
+    def preparedata_correlations (self, textOrder, textType, verseRange):
+        self.inputdata = pd.DataFrame()
         if textOrder == 'official' and textType == 'default':
-            self.inputFileName = self.input_file_name_quran_official_wovel + self.input_file_format_analytics
+            self.inputfile_name = self.inputfile_name_quran_official_wovel + self.inputfile_format_correlations
         elif textOrder == 'revelation' and textType == 'default':
-            self.inputFileName = self.input_file_name_quran_revelation_wovel + self.input_file_format_analytics
+            self.inputfile_name = self.inputfile_name_quran_revelation_wovel + self.inputfile_format_correlations
         elif textOrder == 'revelation' and textType == 'novowel':
-            self.inputFileName = self.input_file_name_quran_revelation_nowovel + self.input_file_format_analytics
+            self.inputfile_name = self.inputfile_name_quran_revelation_nowovel + self.inputfile_format_correlations
         else:
-            self.inputFileName = self.input_file_name_quran_official_nowovel + self.input_file_format_analytics
+            self.inputfile_name = self.inputfile_name_quran_official_nowovel + self.inputfile_format_correlations
         
-        print("\nSelected Qur'an database: %s" %self.inputFileName)
+        print("\nSelected Qur'an database: %s" %self.inputfile_name)
         
-        self.inputData = pd.read_csv(self.myDir + os.sep + self.inputFileDir + os.sep + self.inputFileName)
+        self.inputdata = pd.read_csv(self.mydirectory + os.sep + self.inputfile_directory + os.sep + self.inputfile_name,)
         # Find the col nums of beginning and ending verses
         startVerseFound = False
         endVerseFound = False
         if not len(verseRange) == 0 and len(verseRange) <= 2: self.isInputRange = True
         if len(verseRange) == 1: # a whole chapter
-            for i in range(len(self.inputData.columns)):
-                chapter = self.inputData.columns[i] 
+            for i in range(len(self.inputdata.columns)):
+                chapter = self.inputdata.columns[i] 
                 chapter = chapter.split(':')[0] # https://stackoverflow.com/questions/8247792/python-how-to-cut-a-string-in-python
                 if not startVerseFound and verseRange[0] == chapter:
                     self.startVerse = i
@@ -155,50 +171,128 @@ class quranAnalytics:
         elif len(verseRange) == 2: # a range of verses
             startVerseFound = False
             endVerseFound = False
-            for i in range(len(self.inputData.columns)):
-                if verseRange[0] == self.inputData.columns[i]:
+            for i in range(len(self.inputdata.columns)):
+                if verseRange[0] == self.inputdata.columns[i]:
                     self.startVerse = i
                     startVerseFound = True
-                elif verseRange[1] == self.inputData.columns[i]:
+                elif verseRange[1] == self.inputdata.columns[i]:
                     self.endVerse = i
                     endVerseFound = True
                 if startVerseFound and endVerseFound: break
         elif len(verseRange) > 2: # selection of individual verses
             self.selectedVerses = []
             for j in range(len(verseRange)):
-                for i in range(len(self.inputData.columns)):
-                    if verseRange[j] == self.inputData.columns[i]:
+                for i in range(len(self.inputdata.columns)):
+                    if verseRange[j] == self.inputdata.columns[i]:
                         self.selectedVerses.append(i)
                         break
-                    if i == len(self.inputData.columns) - 1:
+                    if i == len(self.inputdata.columns) - 1:
                         print("\n%s could not be found in the database" %verseRange[j])
         else: # user did not provide any input 
             print("\nPlease provide a verse range.")
 
     # =============================== Prepare input data for search
-    def prepareData_search(self, database = 'root'):
+    def preparedata_search(self, database):
         if database == 'lemma':
-            self.inputFileName = self.input_file_name_quran_lemma + self.input_file_format_search
+            self.inputfile_name = self.inputfile_name_quran_lemma + self.inputfile_format_search
         elif database == 'officialorder':
-            self.inputFileName =  self.input_file_name_quran_official_wovel + self.input_file_format_search
+            self.inputfile_name =  self.inputfile_name_quran_official_wovel + self.inputfile_format_search
         elif database == 'officialorder_novowels':
-            self.inputFileName =  self.input_file_name_quran_official_nowovel + self.input_file_format_search
+            self.inputfile_name =  self.inputfile_name_quran_official_nowovel + self.inputfile_format_search
         elif database == 'revelationorder':
-            self.inputFileName =  self.input_file_name_quran_revelation_wovel + self.input_file_format_search
+            self.inputfile_name =  self.inputfile_name_quran_revelation_wovel + self.inputfile_format_search
         elif database == 'revelationorder_novowels':
-            self.inputFileName =  self.input_file_name_quran_revelation_nowovel + self.input_file_format_search
+            self.inputfile_name =  self.inputfile_name_quran_revelation_nowovel + self.inputfile_format_search
         else: # root database
-            self.inputFileName =  self.input_file_name_quran_root + self.input_file_format_search
+            self.inputfile_name =  self.inputfile_name_quran_root + self.inputfile_format_search
         
-        with open(self.myDir + os.sep + self.inputFileDir + os.sep + self.inputFileName, 'r') as search_data:
+        with open(self.mydirectory + os.sep + self.inputfile_directory + os.sep + self.inputfile_name, 'r', encoding = 'utf-8') as search_data:
             for line in search_data:
-                self.inputData.append(line)
+                self.inputdata.append(line)
 
-        print("\nSelected Qur'an database: %s" %self.inputFileName)
+        print("\nSelected Qur'an database: %s" %self.inputfile_name)
+
+    # =============================== validate user inputs
+    def validate_inputs(self):
+        pass
+
+class handleOutput(quranAnalytics):
+    # =============================== Initializer / Instance attributes
+    def __init__(self, handleinput):
+        self.dateTime = datetime.now().strftime('%Y%m%d_%H%M%S_')
+        self.handleinput = handleinput
+        self.outputfile_directory = 'outputFiles'
+        self.outputfile_encoding = 'utf-8-sig'
+        self.outputdata_fileformat_correlations = '.csv'
+        self.outputdata_fileformat_search = '.txt'
+        self.outputfigure_fileformat = 'pdf'
+
+    # =============================== Write the data to an output file
+    def outputdata_write(self, prevFuncName, dataToWrite):
+        outputFile_fullDir = self.handleinput.mydirectory + os.sep + self.outputfile_directory + os.sep + self.dateTime + '_' + prevFuncName 
+        
+        if prevFuncName in 'calculate_correlations':
+            dataToWrite.to_csv(outputFile_fullDir + self.outputdata_fileformat_correlations, ' ', encoding = self.outputfile_encoding)
+        elif prevFuncName == 'search_keyword':
+            with open(outputFile_fullDir + self.outputdata_fileformat_search, 'w', newline = '') as outputFile:
+                writer = csv.writer(outputFile)
+                writer.writerow(["Total number of occurences: %d" %(len(dataToWrite))])
+                writer.writerow(dataToWrite)
+        elif prevFuncName == 'correlationmatrix':
+            plt.savefig('%s.%s' %(outputFile_fullDir, self.outputfigure_fileformat), 
+                    bbox_inches = 'tight', format = self.outputfigure_fileformat) 
+        else:
+            with open(outputFile_fullDir + self.outputdata_fileformat_correlations, 'w', encoding = self.outputfile_encoding) as outputFile:
+                if prevFuncName == 'find_correlatedverses':
+                    verse = dataToWrite.pop()
+                    numofverses = dataToWrite.pop()
+                    outputFile.write("\nThe most %d correlated verses to %s: \n %s \n" %(numofverses,
+                    verse, dataToWrite[1:numofverses + 1])) # +1 not to show the original verse
+                    dataToWrite = dataToWrite[::-1] # reverse the array to have the right descending order
+                    outputFile.write("\nThe least %d correlated verses to %s: \n %s \n" %(numofverses,
+                    verse, dataToWrite[:numofverses]))
+                elif prevFuncName == 'rank_correlations':
+                    numofverses = dataToWrite.pop()
+                    outputFile.write("\nThe most %d correlated verse to other verses: \n %s \n" 
+                    %(numofverses, dataToWrite[:numofverses]))
+                    dataToWrite = dataToWrite[::-1] # reverse the array to have the right descending order
+                    outputFile.write("\nThe least %d correlated verse to other verses: \n %s \n" 
+                    %(numofverses, dataToWrite[:numofverses]))
+        print("Done!")     
+
+class handlePlot(quranAnalytics):
+    # =============================== Initializer / Instance attributes
+    def __init__(self, handleinput, handleoutput):
+        self.handleinput = handleinput
+        self.handleoutput = handleoutput
+
+    # =============================== Plot the correlation matrix of given verse range
+    def correlationmatrix(self, data, colormap, opacity, xticks_rotation, yticks_rotation):
+        sns.heatmap(data, cmap = colormap, alpha = opacity)
+        plt.xticks(rotation = xticks_rotation)
+        plt.yticks(rotation = yticks_rotation)
+        self.handleoutput.outputdata_write(sys._getframe().f_code.co_name, None)
+        plt.show()
+
+class networks(quranAnalytics):
+    # =============================== Initializer / Instance attributes
+    def __init__(self):
+        pass
+    # =============================== Show correlation of selected verse as a network matrix
+    def versenetwork(self):
+        pass
+
+class search(quranAnalytics):
+    # =============================== Initializer / Instance attributes
+    def __init__(self, handleinput, handleoutput, handleplot):
+        self.handleinput = handleinput
+        self.handleoutput = handleoutput
+        self.handleplot = handleplot
 
     # =============================== Find keyword from database
-    def search_keyword(self, keyword, whole_keyword = True):
-        outputData = []
+    def search_keyword(self, keyword, database = 'root', whole_keyword = True):
+        self.handleinput.preparedata_search(database)
+        interdistance, outputData = [], []
         if not whole_keyword: 
             keyword = keyword.split()
             store_keyword = keyword
@@ -206,13 +300,17 @@ class quranAnalytics:
             for i in range(len(store_keyword)):
                 keyword += '(?=.*' + store_keyword[i] + ')'
 
-        for lines in self.inputData:
+        cnt_interdistance = 0
+        for lines in self.handleinput.inputdata:
             if whole_keyword:
                 if (re.search(keyword, lines)):
                     cnt = 0
                     for i in lines:
                         if i == ' ':
-                            outputData.append(lines[:cnt])
+                            for j in range(len(re.findall(keyword, lines))): # catch multiple occurences in a verse
+                                outputData.append(' ' + lines[:cnt])
+                                interdistance.append(cnt_interdistance)
+                                cnt_interdistance = 0
                             break
                         cnt += 1
             else:
@@ -220,43 +318,15 @@ class quranAnalytics:
                     cnt = 0
                     for i in lines:
                         if i == ' ':
-                            outputData.append(lines[:cnt])
+                            for j in range(len(re.findall(keyword, lines))): # catch multiple occurences in a verse
+                                outputData.append(' ' + lines[:cnt])
+                                interdistance.append(cnt_interdistance)
+                                cnt_interdistance = 0
                             break
                         cnt += 1
-        print("Total found number of verses: %d" %(len(outputData)))
-        self.writeOutputData(sys._getframe().f_code.co_name, outputData)
-
-    # =============================== Write the data to an output file
-    def writeOutputData (self, prevFuncName, dataToWrite):
-        outputFile_fullDir = self.myDir + os.sep + self.outputFileDir + os.sep + self.dateTime + '_' + prevFuncName 
-        
-        if prevFuncName in 'calculateCorrelation':
-            dataToWrite.to_csv(outputFile_fullDir + self.outputData_fileFormat_analyze, ' ', encoding = self.outputFile_encoding)
-        elif prevFuncName == 'search_keyword':
-            with open(outputFile_fullDir + self.outputData_fileFormat_search, 'w', newline = '') as outputFile:
-                writer = csv.writer(outputFile)
-                writer.writerow(dataToWrite)
-        elif prevFuncName == 'plotCorrelationMatrix':
-            plt.savefig('%s.%s' %(outputFile_fullDir, self.outputFig_fileFormat), 
-                    bbox_inches = 'tight', format = self.outputFig_fileFormat) 
-        else:
-            with open(outputFile_fullDir + self.outputData_fileFormat_analyze, 'w', encoding = self.outputFile_encoding) as outputFile:
-                if prevFuncName == 'findCorrelatedVersesToAVerse':
-                    verse = dataToWrite.pop()
-                    compareVerse_numOfVerses = dataToWrite.pop()
-                    outputFile.write("\nThe most %d correlated verses to %s: \n %s \n" %(compareVerse_numOfVerses,
-                    verse, dataToWrite[1:compareVerse_numOfVerses + 1])) # +1 not to show the original verse
-                    dataToWrite = dataToWrite[::-1] # reverse the array to have the right descending order
-                    outputFile.write("\nThe least %d correlated verses to %s: \n %s \n" %(compareVerse_numOfVerses,
-                    verse, dataToWrite[:compareVerse_numOfVerses]))
-                elif prevFuncName == 'least_most_correlatedVersesToOtherVerses':
-                    mostLeast_numOfVerses = dataToWrite.pop()
-                    outputFile.write("\nThe most %d correlated verse to other verses: \n %s \n" 
-                    %(mostLeast_numOfVerses, dataToWrite[:mostLeast_numOfVerses]))
-                    dataToWrite = dataToWrite[::-1] # reverse the array to have the right descending order
-                    outputFile.write("\nThe least %d correlated verse to other verses: \n %s \n" 
-                    %(mostLeast_numOfVerses, dataToWrite[:mostLeast_numOfVerses]))
-        print("Done!")      
+            cnt_interdistance += 1
+        print("Total number of occurences: %d" %(len(outputData)))
+        self.handleoutput.outputdata_write(sys._getframe().f_code.co_name, outputData)
 
 '''
 Check these out: 
